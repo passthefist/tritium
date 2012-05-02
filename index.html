@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Tritium : Lua extension adding missing patterns from other languages" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Tritium</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/rdgoetz/tritium">View on GitHub</a>
+
+          <h1 id="project_title">Tritium</h1>
+          <h2 id="project_tagline">Lua extension adding missing patterns from other languages</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/rdgoetz/tritium/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/rdgoetz/tritium/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>Overview</h1>
+
+<p>Tritium is a collection of utilities for programming in Lua. It adds functional-style methods for lists, new iterators, table and function manipulation, string operators, and a better print/tostring. Tritium eschews adding a formal object model and instead provides the tools for constructing one. This also allows dealing with tables as simple object-like structures, and basic test fixtures. Much of the inspiration for the design of Tritium comes from Python and JavaScript.</p>
+
+<p>The source for much of this code is cobbled together from my own previous projects and added to as I find old, useful Lua code.</p>
+
+<p>This page is also used to collect my ideas for Tritum.</p>
+
+<h3>Iterators</h3>
+
+<p>Though Lua has built in functions for iterating over tables, they iterate over both keys and values. Iterating over the values of a table usually looks like this:</p>
+
+<p><code>for _, v in pairs(tbl) do
+  print(v)
+end
+</code></p>
+
+<p>Tritium adds a keys() and vals() iterator. Keys iterates over all non-array keys, and values iterates over all values in the table, so the above can be re-written as:</p>
+
+<p><code>for v in vals(tbl) do
+  print(v)
+end
+</code></p>
+
+<p>These iterators can take iterables as arugments as well:</p>
+
+<p><code>for k, v in zip(keys(tbl), vals(tbl)) do
+  print(v)
+end
+</code></p>
+
+<p>which will be identical to:</p>
+
+<p><code>for k, v in pairs(tbl) do
+  print(v)
+end
+</code></p>
+
+<p>Some other iterators added are:</p>
+
+<p><code>ripairs(tbl)</code> will iterate over array elements backwards.</p>
+
+<p><code>matches(string,pattern)</code> will iterate over all matched patterns in the given string.</p>
+
+<p><code>tbls(tbl,tbl,...)</code> iterates over a set of tables as if they were concatenated, returning key-value pairs.</p>
+
+<p><code>keys(tbl,tbl,...)</code> iterates over just the keys of a table.</p>
+
+<p><code>vals(tbl,tbl,...)</code> iterates over just the values of a table.</p>
+
+<p><code>zip(tbl,tbl,...)</code> iterate over the given tables in 'parallel' as multiple values.</p>
+
+<p><code>props(tbl,tbl)</code> iterates over <em>all</em> the properties of a table, including ones on all prototypes and the __index field of the metatables (and the metatable's metatable, etc.). Does not detect cycles, though, so can result in an infinite loop.</p>
+
+<h3>Table Helpers</h3>
+
+<p>Tables are the backbone of Lua, so Tritium provides helpers that encapsulate common actions applied to tables, and some patterns that are useful but hacky or ugly. Array methods act on only the array part of a table.</p>
+
+<p><code>table.proto(tbl, key_or_tbl, value) or table.index(tbl, key_or_tbl, value)</code> safely adds values to the __index field of the given table's metatable. If no value is given, and key_or_tbl is a table, then that table's pairs are copied into the table's prototype, replacing collisions.</p>
+
+<p><code>table.hook(tbl, key, func)</code> safely adds a function to the key of the given table's metatable. If a function already exists, then it is chained onto the existing hook. The key has some aliases, so '__newindex' could also be 'newindex', 'new', 'set', or 'put', or 'add' could be '+'. </p>
+
+<p><code>table.method(tbl, name, func)</code> puts a method on the table's prototype</p>
+
+<p><code>table.merge(tbl, other)</code> place the pairs from other into table, not replacing collisions.</p>
+
+<p><code>table.replace(tbl, other)</code> place the pairs from other into table, replacing collisions.</p>
+
+<p><code>table.inspect(tbl)</code> dump the table as a human readable string. Not suitable for serialization. </p>
+
+<p><code>table.json(tbl)</code> serialize the table as json, dropping function types. If given a string, then it parses the string into a live table</p>
+
+<p><code>table.bin(tbl)</code> compactly serialize the table as a string. This serializes all properties of the table, including metatables and functions. If given a string, parses the the string into a live table</p>
+
+<p><code>table.join(tbl, value)</code> concat the values of an table into a string, separated by value</p>
+
+<p><code>table.joinkeys(tbl, value)</code> concat the keys of an table into a string, separated by value</p>
+
+<p><code>table.freeze(tbl)</code> make a table read only</p>
+
+<p><code>table.keyfor(tbl, val)</code> returns the key for a given value or nil</p>
+
+<h4>These array helpers act on only the array part of the table</h4>
+
+<p><code>array.prepend(tbl, value)</code> adds a value to the beginning of the array.</p>
+
+<p><code>array.push(tbl, value)</code> adds a value to the end of the array.</p>
+
+<p><code>array.pop(tbl, value)</code> removes the value at the end of the array and returns that value.</p>
+
+<p><code>array.shift(tbl, value)</code> removes the value at the begging of the array and returns that value.</p>
+
+<p><code>array.join(tbl, value)</code> concat the elements of an array into a string, separated by value.</p>
+
+<p><code>array.remove(tbl, index)</code> remove the value at index and shift all elements left</p>
+
+<p><code>array.indexof(tbl, value)</code> returns the index of the value in the array</p>
+
+<p><code>array.split(tbl, index)</code> split the array into two arrays up to the given index, and after. Slicing on index 1 returns the head and tail of the array. Giving no arguments for the index will split the array in half. Creates two new tables.</p>
+
+<p><code>array.cat(tbl, other, ...)</code> concatenate multiple arrays. </p>
+
+<h3>Data Structures</h3>
+
+<p>Lua tables are usually enough for most problems, and can be used to implement a version of most common structures. However, it's still nice to have real linked lists, sets, and trees. Each structure comes in two versions, rolled and wrapped. Wrapped versions take a table and add functions allowing the table to be used like the wrapping structure. Rolled implementations take no arguments (or a function for some), and implement an optimized version of the structure. For example, wrapped lists are a table with list functions attached, whereas a rolled list is an actual linked list. The same methods are available to both implementations of a structure.</p>
+
+<p>Wrapped Example:</p>
+
+<div class="highlight">
+<pre><span class="n">tbl</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">}</span>
+<span class="n">List</span><span class="p">(</span><span class="n">tbl</span><span class="p">)</span> <span class="c1">-- Calling List puts list methods onto the table</span>
+<span class="n">tbl</span> <span class="o">=</span> <span class="n">tbl</span><span class="p">:</span><span class="n">filter</span><span class="p">(</span><span class="k">function</span> <span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">return</span> <span class="n">v</span><span class="o">%</span><span class="mi">2</span> <span class="k">end</span><span class="p">)</span>
+<span class="c1">-- List methods can be chained, and List returns the created list</span>
+<span class="n">evens</span> <span class="o">=</span> <span class="n">List</span><span class="p">(</span><span class="n">tbl</span><span class="p">):</span><span class="n">filter</span><span class="p">(</span><span class="k">function</span> <span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">return</span> <span class="n">v</span><span class="o">%</span><span class="mi">2</span> <span class="k">end</span><span class="p">))</span>
+</pre>
+</div>
+
+
+<p>Rolled Example:</p>
+
+<div class="highlight">
+<pre><span class="n">list</span> <span class="o">=</span> <span class="n">List</span><span class="p">()</span> <span class="c1">-- Creates empty linked list</span>
+<span class="n">list</span><span class="p">:</span><span class="n">add</span><span class="p">(</span><span class="s2">"</span><span class="s">value"</span><span class="p">,</span><span class="s2">"</span><span class="s">thing"</span><span class="p">,</span><span class="s2">"</span><span class="s">stuff"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">list</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="c1">-- Indexing the list requires iteration</span>
+
+<span class="n">otherlist</span> <span class="o">=</span> <span class="n">List</span><span class="p">():</span><span class="n">from</span><span class="p">({</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">})</span>
+<span class="c1">-- From(table) adds all values to the list, and only works for empty lists</span>
+</pre>
+</div>
+
+
+<p>All structures are iterable:</p>
+
+<div class="highlight">
+<pre><span class="k">for</span> <span class="n">item</span> <span class="k">in</span> <span class="n">List</span><span class="p">({</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">})</span>
+  <span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+<span class="k">end</span>
+</pre>
+</div>
+
+
+<p>and can be constructed from iterables:</p>
+
+<div class="highlight">
+<pre><span class="n">sometable</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">b</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">c</span><span class="o">=</span><span class="mi">3</span><span class="p">}</span>
+
+<span class="n">somelist</span> <span class="o">=</span> <span class="n">List</span><span class="p">(</span><span class="n">keys</span><span class="p">(</span><span class="n">sometable</span><span class="p">))</span>
+<span class="c1">--somelist is [a,b,c]</span>
+<span class="ow">or</span>
+
+<span class="n">somelist</span> <span class="o">=</span> <span class="n">List</span><span class="p">(</span><span class="nb">pairs</span><span class="p">(</span><span class="n">sometable</span><span class="p">))</span>
+<span class="c1">--somelist is [[a,1],[b,2],[c,3]]</span>
+
+<span class="ow">or</span>
+
+<span class="n">somelist</span> <span class="o">=</span> <span class="n">List</span><span class="p">(</span><span class="n">zip</span><span class="p">(</span><span class="n">sometable</span><span class="p">,{</span><span class="s2">"</span><span class="s">junk"</span><span class="p">,</span><span class="s2">"</span><span class="s">stuff"</span><span class="p">}))</span>
+<span class="c1">--somelist is [[1,junk],[2,stuff],[3]]</span>
+</pre>
+</div>
+
+
+<p>Tritium's set structure is similar to Python's, and it's the only structure without significantly different performance depending whether it's wrapped or rolled. Tables are basically sets anyway.</p>
+
+<p><code>Set:add(item)</code> add the item to the set.</p>
+
+<p><code>Set:contains(item), or Set[item]</code> check if the set contains item.</p>
+
+<p><code>Set:remove(item)</code> remove the item from the set and return it.</p>
+
+<p><code>Set:union(set)</code> union two sets together.</p>
+
+<p><code>Set:intersect(set)</code> find the intersection of two sets.</p>
+
+<p><code>Set:diff(set)</code> find the difference between two sets.</p>
+
+<p><code>Set:superset(set)</code> check if the given set is a superset of the calling set.</p>
+
+<p><code>Set:subset(set)</code> check if the given set is a subset of the calling set.</p>
+
+<p>The tree structure is a collection of nodes (key-value pairs) with parents and children. Indexing the tree will look up the node with that key and return the value. The tree constructor can take a sorting function, making the tree a heap or BST depending how it's used. Accessing a key is still constant time for a wrapped structure.</p>
+
+<p><code>Tree:root()</code> get the root of the tree.</p>
+
+<p><code>Tree:size()</code> get the number of elements in the tree.</p>
+
+<p><code>Tree:depth()</code> get the depth of the tree</p>
+
+<p><code>Tree:heapify(func)</code> sort the tree using the sort function for the tree. Optionally, passing this a sort function will override the default one from the constructor. If no default function exists, then heapify will make this function default. If neither function exists, heapify does nothing.</p>
+
+<p><code>Tree:rotr(key)</code></p>
+
+<p><code>Tree:rotl(key)</code></p>
+
+<p><code>Tree:balance()</code></p>
+
+<p>The following can be called on individual nodes as well as the tree given the key. If called on a node, the key argument may be dropped. Any node parameter may be replaced by a key-value pair or tree itself.</p>
+
+<p><code>Tree:children(key)</code> </p>
+
+<p><code>Tree:add(key, childnode)</code></p>
+
+<p><code>Tree:parent(key, newparent)</code></p>
+
+<p><code>Tree:remove(key)</code> </p>
+
+<p><code>Tree:insert(key, parent, child)</code> If the key exists it is first removed and it's children inherit the removed node's parent. The node then is placed in between parent and child. </p>
+
+<p><code>Tree:replace(key, node)</code></p>
+
+<p><code>Tree:val(key, [keyvaluepair])</code></p>
+
+<h3>List functions</h3>
+
+<p>Lua unfortunately lacks map, reduce, filter, etc. Tritium defines these common functions, as well as an each() function to iterate over a list. While redundant with a for loop, each is more in line with these list functions.</p>
+
+<div class="highlight">
+<pre><span class="n">each</span><span class="p">(</span>
+  <span class="n">map</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="k">function</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">v</span><span class="o">+</span><span class="mi">10</span>
+  <span class="k">end</span><span class="p">),</span> <span class="nb">print</span><span class="p">)</span>
+</pre>
+</div>
+
+
+<p>To make things easier to read, these functions are chainable if the table has been wrapped as a list. </p>
+
+<div class="highlight">
+<pre><span class="n">List</span><span class="p">(</span><span class="n">table</span><span class="p">)</span> <span class="p">:</span>
+  <span class="n">map</span><span class="p">(</span><span class="k">function</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> 
+    <span class="k">return</span> <span class="n">v</span><span class="o">+</span><span class="mi">10</span>
+  <span class="k">end</span><span class="p">):</span><span class="n">each</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+</pre>
+</div>
+
+
+<p>If given a string, map() will try to access that key for every value in the list, and return a new list composed of these values. If given only a function, a list func will return another function which, when called with a table, applies the original function to the table. When called with a function instead, it returns the composition of the two functions.</p>
+
+<div class="highlight">
+<pre><span class="n">sometable</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">}</span>
+<span class="n">double</span> <span class="o">=</span> <span class="n">map</span><span class="p">(</span><span class="k">function</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+  <span class="k">return</span> <span class="mi">2</span><span class="o">*</span><span class="n">v</span>
+<span class="k">end</span><span class="p">)</span>
+
+<span class="n">addone</span> <span class="o">=</span> <span class="n">map</span><span class="p">(</span><span class="k">function</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">v</span><span class="o">+</span><span class="mi">1</span>
+<span class="k">end</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">double</span><span class="p">(</span><span class="n">sometable</span><span class="p">))</span>
+<span class="c1">--prints {2,4,6,8,10}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">addone</span><span class="p">(</span><span class="n">double</span><span class="p">(</span><span class="n">sometable</span><span class="p">)))</span>
+<span class="c1">--prints {3,5,7,9,11}</span>
+</pre>
+</div>
+
+
+<p>If called with two functions, then the second function will be invoked with the new table after the operation has been applied. This, combined with above, allows for function chaining even with a bare table:</p>
+
+<div class="highlight">
+<pre><span class="n">sometable</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">}</span>
+<span class="n">somevalue</span> <span class="o">=</span> <span class="n">map</span><span class="p">(</span><span class="n">sometable</span><span class="p">,</span> <span class="k">function</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">v</span><span class="o">+</span><span class="mi">1</span>
+<span class="k">end</span><span class="p">,</span> <span class="n">filter</span><span class="p">(</span><span class="k">function</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">v</span><span class="o">%</span><span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span>
+<span class="k">end</span><span class="p">,</span> <span class="n">reduce</span><span class="p">(</span><span class="n">fn</span><span class="p">.</span><span class="n">add</span><span class="p">)))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">someval</span><span class="p">)</span>
+<span class="c1">--prints 30</span>
+</pre>
+</div>
+
+
+<p>List functions return the same type of structure, whether wrapped, rolled, or just a raw table. The effect of which means this code is valid, since List structures return an iterator when called.</p>
+
+<div class="highlight">
+<pre><span class="n">somelist</span> <span class="o">=</span> <span class="n">List</span><span class="p">({</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">})</span>
+<span class="k">for</span> <span class="n">item</span> <span class="k">in</span> <span class="n">map</span><span class="p">(</span><span class="n">somelist</span><span class="p">,</span> <span class="k">function</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">v</span><span class="o">+</span><span class="mi">1</span>
+<span class="k">end</span><span class="p">,</span> <span class="n">filter</span><span class="p">(</span><span class="k">function</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">v</span><span class="o">%</span><span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span>
+<span class="k">end</span><span class="p">)</span> <span class="k">do</span>
+  <span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+<span class="k">end</span>
+<span class="c1">--prints 2,4,6,8,10</span>
+</pre>
+</div>
+
+
+<p>Other functions are:</p>
+
+<p><code>filter(table, conditionfunc)</code> returns a new list where all items return true for the given condition function. If conditionfunc is a string, then filters out elements by returning the value for the given key on each element.</p>
+
+<p><code>reduce(table, func)</code> uses the given function to combine all the elements in the list into a single value</p>
+
+<p><code>detect(table, func)</code> returns the first value in the list that is true for the given function or nil if no item does</p>
+
+<p><code>compact(table)</code> removes all empty items from the list. An empty item is nil, or has length 0 using the length operator.</p>
+
+<h3>Logic helpers</h3>
+
+<p>Lua famously lacks a switch/case statement, which is largely not missed. However, there are times when switching on a value is pretty useful, so Tritium provides one. There are many ways to implement these in Lua, and the one Tritium uses is a combination of Roberto Ierusalimschy's suggestion and David Manura's post on the Lua user's wiki. The syntax is as follows:</p>
+
+<div class="highlight">
+<pre><span class="n">case</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="p">{</span>
+<span class="c1">--value could be happy, sad, angry</span>
+  <span class="n">happy</span> <span class="o">=</span> <span class="k">function</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="s">Good Day!"</span><span class="p">)</span> 
+  <span class="k">end</span><span class="p">,</span>
+  <span class="n">sad</span> <span class="o">=</span> <span class="k">function</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="s">I'm "</span><span class="o">..</span><span class="n">value</span><span class="o">..</span><span class="s2">"</span><span class="s"> today"</span><span class="p">)</span>
+  <span class="k">end</span><span class="p">,</span>
+  <span class="n">angry</span> <span class="o">=</span> <span class="k">function</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="s">Hulk Smash!"</span><span class="p">)</span>
+  <span class="k">end</span><span class="p">,</span>
+<span class="p">}</span>
+</pre>
+</div>
+
+
+<p>Another common case is to switch on the type of the variable. If the given value doesn't match any of the given cases, then Tritium assumes a type is what should be matched against.</p>
+
+<div class="highlight">
+<pre><span class="n">case</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">string</span> <span class="o">=</span> <span class="k">function</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="s">It's a string"</span><span class="p">)</span> 
+  <span class="k">end</span><span class="p">,</span>
+  <span class="n">table</span> <span class="o">=</span> <span class="k">function</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="s">It's a table"</span><span class="p">)</span>
+  <span class="k">end</span><span class="p">,</span>
+  <span class="k">function</span> <span class="err">=</span> <span class="nf">function</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="s">It's a function"</span><span class="p">)</span>
+  <span class="k">end</span><span class="p">,</span>
+  <span class="n">number</span> <span class="o">=</span> <span class="k">function</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="s">It's a number"</span><span class="p">)</span>
+  <span class="k">end</span><span class="p">,</span>
+  <span class="n">userdata</span> <span class="o">=</span> <span class="k">function</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="s">It's a userdata"</span><span class="p">)</span>
+  <span class="k">end</span><span class="p">,</span>
+<span class="p">}</span>
+</pre>
+</div>
+
+
+<p>Of course, the two may be combined as long as "string", "number", etc. are not valid possibilities for the switched variable. Tritium's case statement will also return the matched value, and the values for cases don't have to be functions. Another possible use is: </p>
+
+<div class="highlight">
+<pre><span class="n">as_number</span> <span class="o">=</span> <span class="n">case</span><span class="p">(</span><span class="n">numberword</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">one</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="n">two</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+  <span class="n">three</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+  <span class="n">four</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+  <span class="o">...</span>
+  <span class="n">infinity</span> <span class="o">=</span> <span class="nb">math.huge</span>
+<span class="p">}</span>
+</pre>
+</div>
+
+
+<p>It's worth noting that these case statements can thrash the garbage collector with so many closures being created in a table that's immediately freed and only used once.</p>
+
+<p>Other logic helpers include:</p>
+
+<p><code>equal(val1,val2)</code> compares the two parameters by value. Numbers are compared within a threshold and tables are recursively iterated and tested for equality if no equals method is defined, otherwise compares them using the equals method. Metatables are not tested for equality.</p>
+
+<p><code>blank(string_or_table)</code> returns false if string_or_table is nil, or has length 0</p>
+
+<p><code>is_f(value)</code> returns true if value is a function, or a callable table</p>
+
+<p><code>is_t(value)</code> returns true if value is a table</p>
+
+<p><code>is_u(value)</code> returns true if value is a userdata</p>
+
+<p><code>is_n(value)</code> returns true if value is a number</p>
+
+<p><code>is_s(value)</code> returns true if value is a string</p>
+
+<p>(More to be documented)</p>
+
+<p>Examples</p>
+
+<p>(More to be documented)</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Tritium maintained by <a href="https://github.com/rdgoetz">rdgoetz</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
